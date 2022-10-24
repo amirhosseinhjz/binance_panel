@@ -1,0 +1,158 @@
+{% extends "base.html" %} {% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">Response</h4>
+            </div>
+            <div class="card-body">
+                {% if message %}
+                <div class="alert alert-success" role="alert">
+                    {{ message }}
+                </div>
+                {% endif %}
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Client Order Id</label>
+                            <input type="text" class="form-control" value="{{ response.clientOrderId }}" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Cumulative Quantity</label>
+                            <input type="text" class="form-control" value="{{ response.cumQty }}" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Cumulative Quote</label>
+                            <input type="text" class="form-control" value="{{ response.cumQuote }}" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Executed Quantity</label>
+                            <input type="text" class="form-control" value="{{ response.executedQty }}" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Order Id</label>
+                            <input type="text" class="form-control" value="{{ response.orderId }}" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Average Price</label>
+                            <input type="text" class="form-control" value="{{ response.avgPrice }}" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Original Quantity</label>
+                            <input type="text" class="form-control" value="{{ response.origQty }}" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Price</label>
+                            <input type="text" class="form-control" value="{{ response.price }}" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Reduce Only</label>
+                            <input type="text" class="form-control" value="{{ response.reduceOnly }}" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Side</label>
+                            <input type="text" class="form-control" value="{{ response.side }}" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Position Side</label>
+                            <input type="text" class="form-control" value="{{ response.positionSide }}" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Status</label>
+                            <input type="text" class="form-control" value="{{ response.status }}" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Stop Price</label>
+                            <input type="text" class="form-control" value="{{ response.stopPrice }}" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Close Position</label>
+                            <input type="text" class="form-control" value="{{ response.closePosition }}" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Symbol</label>
+                            <input type="text" class="form-control" value="{{ response.symbol }}" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Time In Force</label>
+                            <input type="text" class="form-control" value="{{ response.timeInForce }}" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Type</label>
+                            <input type="text" class="form-control" value="{{ response.type }}" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Original Type</label>
+                            <input type="text" class="form-control" value="{{ response.origType }}" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Activate Price</label>
+                            <input type="text" class="form-control" value="{{ response.activatePrice }}" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Price Rate</label>
+                            <input type="text" class="form-control" value="{{ response.priceRate }}" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Update Time</label>
+                            <input type="text" class="form-control" value="{{ response.updateTime }}" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Working Type</label>
+                            <input type="text" class="form-control" value="{{ response.workingType }}" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Price Protect</label>
+                            <input type="text" class="form-control" value="{{ response.priceProtect }}" disabled>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

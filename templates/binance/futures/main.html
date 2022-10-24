@@ -1,0 +1,112 @@
+{% extends "base.html" %} {% block content %} {# form send order #}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">Send Order</h4>
+            </div>
+            <div class="card-body">
+                {% if error %}
+                <div class="alert alert-danger" role="alert">
+                    {{ error }}
+                </div>
+                {% endif %}
+                <form action="/futures/send_order/" method="post">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-3 pr-1">
+                            <div class="form-group">
+                                <label>Symbol</label>
+                                <input class="form-control" type="text" list="symbols" name="symbol"/>
+                                <datalist id="symbols">
+                                    {% for symbol in symbols %}
+                                    <option value="{{ symbol }}">{{ symbol }}</option>
+                                    {% endfor %}
+                                </datalist>                                
+                                <!-- <input type="text" class="form-control" name="symbol" placeholder="BTCUSDT" value="BTCUSDT"> -->
+                            </div>
+                        </div>
+                        <div class="col-md-3 px-1">
+                            <div class="form-group">
+                                <label>Side</label>
+                                <select class="form-control" name="side">
+                                    <option value="BUY">BUY</option>
+                                    <option value="SELL">SELL</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3 px-1">
+                            <div class="form-group">
+                                <label>Type</label> {# show price if limit set #}
+                                <select class="form-control" name="type" id="type" onchange="onTypeChange()" disabled>
+                                    <option value="MARKET">MARKET</option>
+                                    <option value="STOPMARKET">STOP</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3 pl-1">
+                            <div class="form-group" id="quantity" hidden>
+                                <label>Quantity</label>
+                                <input type="text" class="form-control" name="quantity" placeholder="0.001" value="0.001">
+                            </div>
+                        </div>
+                        <div class="col-md-3 pr-1" id="price" style="display: none;">
+                            <div class="form-group">
+                                <label>Price</label>
+                                <input type="text" class="form-control" name="price">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <table id="stop_order_table" class="display" style="width:50%">
+                                <caption><button type="button" class="btn btn-primary btn-round" style="width:25%" id="add_row" onclick="addStoStopOrderRowInput()">Add Row</button></caption>
+                                <thead>
+                                    <tr>
+                                        <th>STOP ORDERS</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Price</th>
+                                        <th>Percent</th>
+                                    </tr>
+                                </thead>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="2">
+                                        </th>
+                                    </tr>
+
+                                    
+                            <div class="update ml-auto mr-auto">
+                                </tfoot>
+                            </table>
+                                <button type="submit" class="btn btn-primary btn-round">Send Order</button>
+                            </div>
+                        </div>
+                </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    {% endblock %} {% block script %} {# if type is limit show price #}
+    <script>
+        function onTypeChange(){
+            var type = document.getElementById("type").value;
+            if(type == "MARKET"){
+                document.getElementById("quantity").hidden = true;
+            }else{
+                document.getElementById("quantity").hidden = false;
+            }
+        }
+
+        function addStoStopOrderRowInput(){
+            var table = document.getElementById("stop_order_table");
+            var tableSize = table.rows.length - 2;
+            var row = table.insertRow(-1);
+            var cell1 = row.insertCell(0);
+            var cell2 = row.insertCell(1);
+            cell1.innerHTML = `<input type="text" class="form-control" name="stop_price${tableSize}" placeholder="Price" value="0">`;
+            cell2.innerHTML = `<input type="text" class="form-control" name="stop_percent${tableSize}" placeholder="Percent" value="10%">`;
+        }
+
+    </script>
+    {% endblock %}
