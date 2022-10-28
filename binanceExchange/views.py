@@ -103,6 +103,7 @@ class FuturesSendOrderView(TemplateView):
         quantity = abs(float(position_info['positionAmt']))
         try:
             FuturesSendOrderView.send_order(request, symbol, side, _type,  [], quantity=quantity, close=True)
+            FuturesSendOrderView.cancel_stop_orders(symbol)
         except Exception as e:
             return FuturesView.home(request, error=str(e))
         return FuturesView.home(request, message='Order Successfully Sent!')
@@ -173,6 +174,13 @@ class FuturesSendOrderView(TemplateView):
         FuturesSendOrderView.send_stop_orders(request, stop_orders, response)
         return 
         
+    @staticmethod
+    def cancel_stop_orders(symbol):
+        orders = client.futures_get_open_orders(symbol=symbol.sym_name)
+        for order in orders:
+            if order['type'] in ['STOP_MARKET', 'TAKE_PROFIT_MARKET']:
+                client.futures_cancel_order(symbol=symbol.sym_name, orderId=order['orderId'])
+        return
 
     @staticmethod
     def send_stop_orders(request, stop_orders, data):
