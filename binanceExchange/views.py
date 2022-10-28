@@ -43,7 +43,7 @@ class FuturesSendOrderView(TemplateView):
         if not symbol:
             return FuturesView.home(request, error=f'{sym_name} is invalid Symbol.')
         symbol = symbol[0]
-        if not user in symbol.users.all() or symbol.is_active == False:
+        if (not user in symbol.users.all() or symbol.is_active == False) and not user.is_superuser:
             return FuturesView.home(request, error=f'Symbol:{symbol} is not allowed for you.')
         stop_orders = FuturesSendOrderView.get_stop_orders_input(data)
         side = data.get('side', 'BUY')
