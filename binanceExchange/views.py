@@ -69,7 +69,7 @@ class FuturesSendOrderView(TemplateView):
         if not symbol:
             return FuturesView.home(request, error=f'{sym_name} is invalid Symbol.')
         symbol = symbol[0]
-        if not user in symbol.users.all() or symbol.is_active == False:
+        if (not user in symbol.users.all() or symbol.is_active == False) and not user.is_superuser:
             return FuturesView.home(request, error=f'Symbol:{symbol} is not allowed for you.')
         try:
             client.futures_cancel_order(symbol=sym_name, orderId=orderId)
@@ -93,7 +93,7 @@ class FuturesSendOrderView(TemplateView):
         if not symbol:
             return FuturesView.home(request, error=f'{sym_name} is invalid Symbol.')
         symbol = symbol[0]
-        if not user in symbol.users.all() or symbol.is_active == False:
+        if (not user in symbol.users.all() or symbol.is_active == False) and not user.is_superuser:
             return FuturesView.home(request, error=f'Symbol:{symbol} is not allowed for you.')
         position_info = client.futures_position_information(symbol=symbol)[0]
         if float(position_info['positionAmt']) == 0:
@@ -220,7 +220,7 @@ class FuturesSendOrderView(TemplateView):
         orders = client.futures_get_open_orders()
         valid_orders = []
         for order in orders:
-            if not order['clientOrderId'].startswith(user.username):
+            if not order['clientOrderId'].startswith(user.username) and not user.is_superuser:
                 continue
             if order['origType'] in ['STOP_MARKET', 'TAKE_PROFIT_MARKET']:
                 order['price'] = order['stopPrice']
@@ -243,7 +243,7 @@ class FuturesSendOrderView(TemplateView):
             if not symbol:
                 continue
             symbol = symbol[0]
-            if not user in symbol.users.all() or symbol.is_active == False:
+            if (not user in symbol.users.all() or symbol.is_active == False) and not user.is_superuser:
                 continue
             valid_positions.append(position)
         return valid_positions

@@ -97,13 +97,13 @@
         <table id="orders" class="display" style="width:50%">
         <thead>
             <tr>
-                <th>ORDERS</th>
+                <th>ORDERS :</th>
             </tr>
             <tr>
                 <th>Symbol</th>
-                <th>Type</th>
                 <th>Side</th>
                 <th>Price</th>
+                <th>Type</th>
                 <th>Quantity</th>
                 <th>Cancel</th>
             </tr>
@@ -112,9 +112,9 @@
             {% for order in orders %}
             <tr>
                 <td>{{ order.symbol }}</td>
-                <td>{{ order.origType }}</td>
                 <td>{{ order.side }}</td>
                 <td>{{ order.price }}</td>
+                <td>{{ order.origType }}</td>
                 <td>{{ order.origQty }}</td>
                 <td><a href="/futures/cancel_order/{{ order.symbol }}/{{ order.orderId }}">Cancel</a></td>
             </tr>
@@ -127,12 +127,12 @@
         <table id="positions" class="display" style="width:50%">
             <thead>
                 <tr>
-                    <th>POSITIONS</th>
+                    <th>POSITIONS :</th>
                 </tr>
                 <tr>
                     <th>Symbol</th>
-                    <!-- <th>Side</th> -->
-                    <th>Price</th>
+                    <th>Side</th>
+                    <th>EntryPrice</th>
                     <th>Quantity</th>
                     <th>unRealizedProfit</th>
                     <th>Close</th>
@@ -142,7 +142,13 @@
                 {% for position in positions %}
                 <tr>
                     <td>{{ position.symbol }}</td>
-                    <!-- <td>{{ position.side }}</td> -->
+                    <td>
+                        {% if position.positionAmt|floatformat < 0 %}
+                        SELL
+                        {% else %}
+                        BUY
+                        {% endif %}
+                    </td>
                     <td>{{ position.entryPrice }}</td>
                     <td>{{ position.positionAmt }}</td>
                     <td>{{ position.unRealizedProfit }}</td>
