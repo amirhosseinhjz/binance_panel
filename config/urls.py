@@ -18,6 +18,6 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include(('binance.urls', 'binance'), namespace='binance')),
+    path('', include(('binanceExchange.urls', 'binance'), namespace='binance')),
     path('', include(('manager.urls', 'manager'), namespace='manager')),
 ]

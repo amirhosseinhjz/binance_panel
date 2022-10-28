@@ -11,6 +11,11 @@
                     {{ error }}
                 </div>
                 {% endif %}
+                {% if message %}
+                <div class="alert alert-success" role="alert">
+                    {{ message }}
+                </div>
+                {% endif %}
                 <form action="/futures/send_order/" method="post">
                     {% csrf_token %}
                     <div class="row">
@@ -44,12 +49,12 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-3 pl-1">
+                        <!-- <div class="col-md-3 pl-1">
                             <div class="form-group" id="quantity" hidden>
                                 <label>Quantity</label>
                                 <input type="text" class="form-control" name="quantity" placeholder="0.001" value="0.001">
                             </div>
-                        </div>
+                        </div> -->
                         <div class="col-md-3 pr-1" id="price" style="display: none;">
                             <div class="form-group">
                                 <label>Price</label>
@@ -58,7 +63,8 @@
                         </div>
                         <div class="row">
                             <table id="stop_order_table" class="display" style="width:50%">
-                                <caption><button type="button" class="btn btn-primary btn-round" style="width:25%" id="add_row" onclick="addStoStopOrderRowInput()">Add Row</button></caption>
+                                <caption><button type="button" class="btn btn-primary btn-round" style="width:18%" id="add_row" onclick="addStoStopOrderRowInput()">Add Row</button></caption>
+                                <caption><button type="button" class="btn btn-primary btn-round" style="width:18%" id="del_row" onclick="deleteStopOrderRowInput()">Delete Row</button></caption>
                                 <thead>
                                     <tr>
                                         <th>STOP ORDERS</th>
@@ -85,7 +91,67 @@
                 </div>
             </div>
         </div>
-
+    </div>
+    <center>
+    <div>
+        <table id="orders" class="display" style="width:50%">
+        <thead>
+            <tr>
+                <th>ORDERS</th>
+            </tr>
+            <tr>
+                <th>Symbol</th>
+                <th>Type</th>
+                <th>Side</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Cancel</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.symbol }}</td>
+                <td>{{ order.origType }}</td>
+                <td>{{ order.side }}</td>
+                <td>{{ order.price }}</td>
+                <td>{{ order.origQty }}</td>
+                <td><a href="/futures/cancel_order/{{ order.symbol }}/{{ order.orderId }}">Cancel</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        </table>
+    </div>
+    <br><br>
+    <div>
+        <table id="positions" class="display" style="width:50%">
+            <thead>
+                <tr>
+                    <th>POSITIONS</th>
+                </tr>
+                <tr>
+                    <th>Symbol</th>
+                    <!-- <th>Side</th> -->
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>unRealizedProfit</th>
+                    <th>Close</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for position in positions %}
+                <tr>
+                    <td>{{ position.symbol }}</td>
+                    <!-- <td>{{ position.side }}</td> -->
+                    <td>{{ position.entryPrice }}</td>
+                    <td>{{ position.positionAmt }}</td>
+                    <td>{{ position.unRealizedProfit }}</td>
+                    <td><a href="/futures/close_position/{{ position.symbol }}">Close</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            </table>
+        </center>
     </div>
     {% endblock %} {% block script %} {# if type is limit show price #}
     <script>
@@ -106,6 +172,14 @@
             var cell2 = row.insertCell(1);
             cell1.innerHTML = `<input type="text" class="form-control" name="stop_price${tableSize}" placeholder="Price" value="0">`;
             cell2.innerHTML = `<input type="text" class="form-control" name="stop_percent${tableSize}" placeholder="Percent" value="10%">`;
+        }
+
+        function deleteStopOrderRowInput(){
+            var table = document.getElementById("stop_order_table");
+            var tableSize = table.rows.length - 2;
+            if(tableSize > 0){
+                table.deleteRow(-1);
+            }
         }
 
     </script>

@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     # 3rd party
     
     # local
-    'binance',
+    'binanceExchange',
     'manager',
 ]
 
@@ -137,8 +137,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = '/futures'
 LOGOUT_REDIRECT_URL = '/login'
 
-
+from binance.client import Client
 # Trade server setup
-# API_KEY = os.getenv('API_KEY')
-# API_SECRET = os.getenv('API_SECRET')
-client = 0#Client(API_KEY, API_SECRET)
+API_KEY = '93a09d317e3c3d6a986401c1ad487d81f8c53a50122f3a91a0610fe9880b884d'
+API_SECRET = '286e0fca8d36061c20f0dc53ef7a31c670ee8a993cc63c90c1cea9cfdfab764b'
+client = Client(API_KEY, API_SECRET, testnet=True)
