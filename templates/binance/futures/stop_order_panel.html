@@ -1,0 +1,33 @@
+{% extends "base.html" %} {% block content %} {# form send order #}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <center>
+                <h4 class="card-title">SEND STOP ORDERS</h4>
+                </center>
+            </div>
+            <div class="card-body">
+                {% if error %}
+                <div class="alert alert-danger" role="alert">
+                    {{ error }}
+                </div>
+                {% endif %}
+                {% if message %}
+                <div class="alert alert-success" role="alert">
+                    {{ message }}
+                </div>
+                {% endif %}
+                <form action="/futures/stop_order_panel/" method="post">
+                    {% csrf_token %}
+                    <input type="text" class="form-control" name="symbol" placeholder="Symbol" value="">
+                    <button type="submit" class="btn btn-primary btn-round">Go to Page</button>
+                            </div>
+                        </div>
+                </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endblock %} {% block script %} {# if type is limit show price #}
+    {% endblock %}

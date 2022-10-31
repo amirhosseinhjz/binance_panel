@@ -4,7 +4,7 @@ from django.views.generic import TemplateView
 from django.forms.models import model_to_dict
 from django.http import JsonResponse
 from django.shortcuts import redirect
-import random
+import random, time
 from .models import Symbol, SizeConfig
 
 class FuturesView(TemplateView):
@@ -55,7 +55,7 @@ class FuturesSendOrderView(TemplateView):
             return FuturesView.home(request, error=str(e))
         return FuturesView.home(request, message='Order Successfully Sent!')
 
-    def cancel_order(request, symbol, orderId):
+    def cancel_order(request, symbol):
         """
         It takes the data from the form, converts it to JSON,
         and sends it to the trade server
@@ -72,10 +72,52 @@ class FuturesSendOrderView(TemplateView):
         if (not user in symbol.users.all() or symbol.is_active == False) and not user.is_superuser:
             return FuturesView.home(request, error=f'Symbol:{symbol} is not allowed for you.')
         try:
-            client.futures_cancel_order(symbol=sym_name, orderId=orderId)
+            FuturesSendOrderView.cancel_stop_orders(symbol)
         except Exception as e:
             return FuturesView.home(request, error=str(e))
-        return FuturesView.home(request, message=f'Order:{orderId} cancelled successfully.')
+        return FuturesSendOrderView.reset_stop_orders(request, symbol)
+
+    def reset_stop_orders(request, symbol, method=None):
+        method = method or request.method
+        print(method)
+        if method == 'GET':
+            return render(request, 'binance/futures/reset_stop_orders.html', {'symbol': symbol})
+        return FuturesSendOrderView.set_stop_orders(request, symbol)
+
+    def set_stop_orders(request, symbol):
+        """
+        It takes the data from the form, converts it to JSON,
+        and sends it to the trade server
+        
+        :param request: The request object
+        :return: The response is being returned.
+        """
+        user = request.user
+        if not user.is_authenticated:
+            return redirect('binance:login')
+        sym_name = symbol
+        symbol = Symbol.objects.filter(sym_name=sym_name)
+        if not symbol:
+            return FuturesView.home(request, error=f'{sym_name} is invalid Symbol.')
+        symbol = symbol[0]
+        if (not user in symbol.users.all() or symbol.is_active == False) and not user.is_superuser:
+            return FuturesView.home(request, error=f'Symbol:{symbol} is not allowed for you.')
+        data = request.POST.dict()
+        stop_orders = FuturesSendOrderView.get_stop_orders_input(data)
+        position = FuturesSendOrderView.get_positions(user=user, sym_name=sym_name)
+        if float(position['positionAmt']) == 0:
+            return FuturesView.home(request, error=f'You dont have any position in {symbol.sym_name}.')
+        position_data = {
+            'symbol': sym_name,
+            'side': 'BUY' if float(position['positionAmt']) > 0 else 'SELL',
+            'avgPrice': float(position['entryPrice']),
+            'origQty': float(position['positionAmt']),
+        }
+        try:
+            FuturesSendOrderView.send_stop_orders(request, stop_orders, position_data)
+        except Exception as e:
+            return FuturesView.home(request, error=str(e))
+        return FuturesView.home(request, message='Stop Orders Successfully Set!')
 
     def close_position(request, symbol):
         """
@@ -108,11 +150,28 @@ class FuturesSendOrderView(TemplateView):
             return FuturesView.home(request, error=str(e))
         return FuturesView.home(request, message='Order Successfully Sent!')
 
+    def stop_order_panel(request):
+        if request.method == 'GET':
+            user = request.user
+            if not user.is_authenticated:
+                return redirect('binance:login')
+            if not user.is_superuser:
+                return redirect('binance:home')
+            return render(request, 'binance/futures/stop_order_panel.html')
+        symbol = request.POST.get('symbol', None)
+        if not symbol:
+            return FuturesView.home(request, error=f'Invalid Symbol.')
+        return FuturesSendOrderView.reset_stop_orders(request, symbol, 'GET')
+
     def test(request):
+        if Symbol.objects.all():
+            return JsonResponse({})
         data = client.get_exchange_info()
         # symbols = [dt['symbol'] for dt in data['symbols']]
         for symbol in data['symbols']:
             sym_name = symbol['symbol']
+            if not sym_name.endswith('USDT'):
+                continue
             for filt in symbol['filters']:
                 if filt['filterType'] == 'LOT_SIZE':
                     minQty = float(filt['minQty'])
@@ -151,13 +210,14 @@ class FuturesSendOrderView(TemplateView):
             Size_config = FuturesSendOrderView.get_order_size_config()
             asset = Size_config['trade_wallet_percent'] * Size_config['margin'] / 100
             price = FuturesSendOrderView.get_price(symbol.sym_name)
-            quantity = FuturesSendOrderView.round(FuturesSendOrderView.get_float_step_size(symbol.step_size), asset / price)
+            quantity = round(asset / price, FuturesSendOrderView.get_float_step_size(symbol.step_size))
         leverage = FuturesSendOrderView.get_order_size_config()['leverage']
-        if (quantity*leverage < symbol.min_qty or ((quantity*leverage*10**5) % (symbol.step_size*10**5)) !=0 ) and not close:
+        compared_qty = round(quantity*leverage, FuturesSendOrderView.get_float_step_size(symbol.step_size))
+        if (compared_qty < symbol.min_qty or ((compared_qty*10**5) % (symbol.step_size*10**5)) !=0 ) and not close:
             raise Exception(f'Quantity should be greater than {symbol.min_qty} \
                     and should be multiple of {symbol.step_size} for the main order but it is {quantity*leverage}, call admin for help.')
         for stop_order in stop_orders:
-            qty = (float(stop_order['quantity'])*leverage)
+            qty = round(float(stop_order['quantity'])*leverage, FuturesSendOrderView.get_float_step_size(symbol.step_size))
             if qty < symbol.min_qty or ((qty*10**5) % (symbol.step_size*10**5)) != 0:
                 raise Exception(f'Quantity should be greater than {symbol.min_qty} \
                     and should be multiple of {symbol.step_size} for stop orders but it is {qty}, call admin for help.')
@@ -179,6 +239,7 @@ class FuturesSendOrderView(TemplateView):
         orders = client.futures_get_open_orders(symbol=symbol.sym_name)
         for order in orders:
             if order['type'] in ['STOP_MARKET', 'TAKE_PROFIT_MARKET']:
+                time.sleep(1)
                 client.futures_cancel_order(symbol=symbol.sym_name, orderId=order['orderId'])
         return
 
@@ -204,6 +265,7 @@ class FuturesSendOrderView(TemplateView):
             quantity = (float(order['quantity']) * qty * 0.01)
             params['quantity'] = FuturesSendOrderView.round(3, quantity)
             params['newClientOrderId'] = request.user.username + str(FuturesSendOrderView.generate_random_order_id())
+            time.sleep(2)
             client.futures_create_order(**params)
         
     @staticmethod
@@ -236,7 +298,7 @@ class FuturesSendOrderView(TemplateView):
         return valid_orders
 
     @staticmethod
-    def get_positions(user):
+    def get_positions(user, sym_name=None):
         """
         Get all positions for the user
         :param request: The request object
@@ -245,6 +307,8 @@ class FuturesSendOrderView(TemplateView):
         positions = client.futures_position_information()
         valid_positions = []
         for position in positions:
+            if sym_name and position['symbol'] == sym_name:
+                return position
             if float(position['positionAmt']) == 0:
                 continue
             symbol = Symbol.objects.filter(sym_name=position['symbol'])

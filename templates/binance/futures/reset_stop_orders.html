@@ -1,0 +1,80 @@
+{% extends "base.html" %} {% block content %} {# form send order #}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <center>
+                <h4 class="card-title">SEND STOP ORDERS: {{ symbol }}</h4>
+                </center>
+            </div>
+            <div class="card-body">
+                {% if error %}
+                <div class="alert alert-danger" role="alert">
+                    {{ error }}
+                </div>
+                {% endif %}
+                {% if message %}
+                <div class="alert alert-success" role="alert">
+                    {{ message }}
+                </div>
+                {% endif %}
+                <form action="/futures/reset_stop_orders/{{ symbol }}/" method="post">
+                    {% csrf_token %}
+                        <div class="row">
+                            <center>
+                            <table id="stop_order_table" class="display" style="width:50%">
+                                <caption><button type="button" class="btn btn-primary btn-round" style="width:18%" id="add_row" onclick="addStoStopOrderRowInput()">Add Row</button></caption>
+                                <caption><button type="button" class="btn btn-primary btn-round" style="width:18%" id="del_row" onclick="deleteStopOrderRowInput()">Delete Row</button></caption>
+                                <thead>
+                                    <tr>
+                                        <th>Price</th>
+                                        <th>Percent</th>
+                                    </tr>
+                                </thead>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="2">
+                                        </th>
+                                    </tr>
+                                </center>
+                                </tfoot>
+                            </table>
+                                <button type="submit" class="btn btn-primary btn-round">Send Orders</button>
+                            </div>
+                        </div>
+                </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endblock %} {% block script %} {# if type is limit show price #}
+    <script>
+        function onTypeChange(){
+            var type = document.getElementById("type").value;
+            if(type == "MARKET"){
+                document.getElementById("quantity").hidden = true;
+            }else{
+                document.getElementById("quantity").hidden = false;
+            }
+        }
+
+        function addStoStopOrderRowInput(){
+            var table = document.getElementById("stop_order_table");
+            var tableSize = table.rows.length - 1;
+            var row = table.insertRow(-1);
+            var cell1 = row.insertCell(0);
+            var cell2 = row.insertCell(1);
+            cell1.innerHTML = `<input type="text" class="form-control" name="stop_price${tableSize}" placeholder="Price" value="0">`;
+            cell2.innerHTML = `<input type="text" class="form-control" name="stop_percent${tableSize}" placeholder="Percent" value="10%">`;
+        }
+
+        function deleteStopOrderRowInput(){
+            var table = document.getElementById("stop_order_table");
+            var tableSize = table.rows.length - 2;
+            if(tableSize > 0){
+                table.deleteRow(-1);
+            }
+        }
+
+    </script>
+    {% endblock %}
