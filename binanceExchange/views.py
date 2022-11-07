@@ -324,10 +324,13 @@ class FuturesSendOrderView(TemplateView):
 
     @staticmethod
     def get_float_step_size(number):
-        step_size = 0
-        number = str(number)
-        if 'e' in number:
-            step_size += int(number.split('e-')[1])
-        if '.' in number:
-            step_size += len(number.split('e-')[0].split('.')[1])
-        return step_size
+        if int(number) != number:
+            step_size = 0
+            number = str(number)
+            if 'e' in number:
+                step_size += int(number.split('e-')[1])
+            if '.' in number:
+                step_size += len(number.split('e-')[0].split('.')[1])
+            return step_size
+        else:
+            return -str(int(number)).count('0')
