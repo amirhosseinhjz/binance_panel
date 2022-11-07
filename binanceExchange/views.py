@@ -309,7 +309,8 @@ class FuturesSendOrderView(TemplateView):
         for position in positions:
             if sym_name and position['symbol'] == sym_name:
                 return position
-            if float(position['positionAmt']) == 0:
+            amt = float(position['positionAmt'])
+            if amt == 0:
                 continue
             symbol = Symbol.objects.filter(sym_name=position['symbol'])
             if not symbol:
@@ -317,6 +318,7 @@ class FuturesSendOrderView(TemplateView):
             symbol = symbol[0]
             if (not user in symbol.users.all() or symbol.is_active == False) and not user.is_superuser:
                 continue
+            position['side'] = 'BUY' if amt > 0 else 'SELL'
             valid_positions.append(position)
         return valid_positions
 

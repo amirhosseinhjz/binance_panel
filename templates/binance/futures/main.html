@@ -142,13 +142,7 @@
                 {% for position in positions %}
                 <tr>
                     <td>{{ position.symbol }}</td>
-                    <td>
-                        {% if position.positionAmt|floatformat < 0 %}
-                        SELL
-                        {% else %}
-                        BUY
-                        {% endif %}
-                    </td>
+                    <td>{{ position.side }}</td>
                     <td>{{ position.entryPrice }}</td>
                     <td>{{ position.positionAmt }}</td>
                     <td>{{ position.unRealizedProfit }}</td>
