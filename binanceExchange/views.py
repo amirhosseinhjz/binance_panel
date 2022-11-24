@@ -4,6 +4,7 @@ from django.views.generic import TemplateView
 from django.forms.models import model_to_dict
 from django.http import JsonResponse
 from django.shortcuts import redirect
+from django.contrib.auth.models import User
 import random, time
 from .models import Symbol, SizeConfig
 
@@ -29,13 +30,6 @@ class FuturesView(TemplateView):
 class FuturesSendOrderView(TemplateView):
 
     def post(self, request):
-        """
-        It takes the data from the form, converts it to JSON,
-        and sends it to the trade server
-        
-        :param request: The request object
-        :return: The response is being returned.
-        """
         user = request.user
         data = request.POST.dict()
         sym_name = data['symbol']
@@ -45,6 +39,8 @@ class FuturesSendOrderView(TemplateView):
         symbol = symbol[0]
         if (not user in symbol.users.all() or symbol.is_active == False) and not user.is_superuser:
             return FuturesView.home(request, error=f'Symbol:{symbol} is not allowed for you.')
+        if float(self.get_positions(user, sym_name)['positionAmt']) != 0:
+            return redirect('binance:home')
         stop_orders = FuturesSendOrderView.get_stop_orders_input(data)
         side = data.get('side', 'BUY')
         _type = data.get('type', 'MARKET')
@@ -81,7 +77,7 @@ class FuturesSendOrderView(TemplateView):
         method = method or request.method
         print(method)
         if method == 'GET':
-            return render(request, 'binance/futures/reset_stop_orders.html', {'symbol': symbol})
+            return render(request, 'binance/futures/reset_stop_orders.html', {'symbol': symbol, 'users': User.objects.all()})
         return FuturesSendOrderView.set_stop_orders(request, symbol)
 
     def set_stop_orders(request, symbol):
@@ -92,9 +88,12 @@ class FuturesSendOrderView(TemplateView):
         :param request: The request object
         :return: The response is being returned.
         """
-        user = request.user
-        if not user.is_authenticated:
+        if not request.user.is_authenticated:
             return redirect('binance:login')
+        user_id = request.POST.get('user_id', None)
+        if not user_id:
+            return FuturesView.home(request, error=f'Invalid User.')
+        user = User.objects.get(id=user_id)
         sym_name = symbol
         symbol = Symbol.objects.filter(sym_name=sym_name)
         if not symbol:
@@ -114,7 +113,7 @@ class FuturesSendOrderView(TemplateView):
             'origQty': float(position['positionAmt']),
         }
         try:
-            FuturesSendOrderView.send_stop_orders(request, stop_orders, position_data)
+            FuturesSendOrderView.send_stop_orders(user, stop_orders, position_data, step_size=symbol.step_size)
         except Exception as e:
             return FuturesView.home(request, error=str(e))
         return FuturesView.home(request, message='Stop Orders Successfully Set!')
@@ -210,7 +209,7 @@ class FuturesSendOrderView(TemplateView):
             Size_config = FuturesSendOrderView.get_order_size_config()
             asset = Size_config['trade_wallet_percent'] * Size_config['margin'] / 100
             price = FuturesSendOrderView.get_price(symbol.sym_name)
-            quantity = round(asset / price, FuturesSendOrderView.get_float_step_size(symbol.step_size))
+            quantity = FuturesSendOrderView.round(asset / price, symbol.step_size)
         leverage = FuturesSendOrderView.get_order_size_config()['leverage']
         compared_qty = round(quantity*leverage, FuturesSendOrderView.get_float_step_size(symbol.step_size))
         if (compared_qty < symbol.min_qty or ((compared_qty*10**5) % (symbol.step_size*10**5)) !=0 ) and not close:
@@ -231,7 +230,7 @@ class FuturesSendOrderView(TemplateView):
             'newOrderRespType': 'RESULT',
         }
         response = client.futures_create_order(**data)
-        FuturesSendOrderView.send_stop_orders(request, stop_orders, response)
+        FuturesSendOrderView.send_stop_orders(request.user, stop_orders, response, step_size=symbol.step_size)
         return 
         
     @staticmethod
@@ -244,7 +243,7 @@ class FuturesSendOrderView(TemplateView):
         return
 
     @staticmethod
-    def send_stop_orders(request, stop_orders, data):
+    def send_stop_orders(user, stop_orders, data, step_size):
         symbol = data['symbol']
         entryPrice = data['avgPrice']
         side = data['side']
@@ -263,8 +262,9 @@ class FuturesSendOrderView(TemplateView):
             params['side'] = 'SELL' if side == 'BUY' else 'BUY'
             params['stopPrice'] = order['stopPrice']
             quantity = (float(order['quantity']) * qty * 0.01)
-            params['quantity'] = FuturesSendOrderView.round(3, quantity)
-            params['newClientOrderId'] = request.user.username + str(FuturesSendOrderView.generate_random_order_id())
+            params['quantity'] = abs(round(quantity, FuturesSendOrderView.get_float_step_size(step_size)))
+            params['newClientOrderId'] = user.username + str(FuturesSendOrderView.generate_random_order_id())
+            print(params)
             time.sleep(2)
             client.futures_create_order(**params)
         
@@ -321,6 +321,15 @@ class FuturesSendOrderView(TemplateView):
             position['side'] = 'BUY' if amt > 0 else 'SELL'
             valid_positions.append(position)
         return valid_positions
+
+    @staticmethod
+    def round(number, step_size):
+        points = FuturesSendOrderView.get_float_step_size(step_size)
+        number = round(number, points)
+        number *= 10**(points)
+        number += (4 - (number%4))
+        number *= 10**(-points)
+        return round(number, points)
 
     @staticmethod
     def get_float_step_size(number):
